@@ -52,14 +52,17 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     if "pre_training_ckt" in config:
         checkpoint = torch.load(config['pre_training_ckt'])
         model.load_state_dict(checkpoint['state_dict'])
-    model.presetting_ram()
-    model.precached_knowledge()
+    # model.presetting_ram()
+    # model.precached_knowledge()
     logger.info(model)
-    for name, param in model.named_parameters():
-        if 'seq_tar_ram' not in name and 'tar_seq_ram' not in name:
-            param.requires_grad = False
-        else:
-            param.requires_grad = True
+    if config['model'] == 'RaSeRec':
+        model.presetting_ram()
+        model.precached_knowledge()
+        for name, param in model.named_parameters():
+            if 'seq_tar_ram' not in name and 'tar_seq_ram' not in name:
+                param.requires_grad = False
+            else:
+                param.requires_grad = True
     # trainer loading and initialization
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
     best_valid_score, best_valid_result = trainer.fit(
@@ -111,7 +114,9 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     plt.savefig(log_dir + '/svs.pdf', format='pdf', transparent=False, bbox_inches='tight')
 
     # model evaluation
-    model.precached_knowledge_val(valid_data)
+    # model.precached_knowledge_val(valid_data)
+    if config['model'] == 'RaSeRec':
+        model.precached_knowledge_val(valid_data)
     test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
 
     logger.info(set_color('best valid ', 'yellow') + f': {best_valid_result}')
